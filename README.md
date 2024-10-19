@@ -7,7 +7,7 @@ Takes in information about cast roles and outputs all available casts.
 1. Create CSV files for roles and preferences using the examples in `tests/fixtures` and place them in the `data/` folder.
 
 2. Set up your environment by running:
-    
+
     ```{bash}
     pipenv install
     pipenv shell
