@@ -12,9 +12,9 @@ from src.classes.cast import Cast, cast_equal
 class CastGenerator:
 
     def __init__(self, available_members: List[str] = []):
-        self.roles = pd.read_csv("tests/fixtures/roles.csv")
+        self.roles = pd.read_csv("data/roles.csv")
         self.preferences = pd.read_csv(
-            "tests/fixtures/preferences.csv"
+            "data/preferences.csv"
         )  # Will eventually be related to show date
         self.available_members = available_members
         self.roles = self.roles[self.roles.member.isin(self.available_members)]
@@ -155,7 +155,7 @@ class CastGenerator:
                 logging.debug(f"Could not find an Actor to play {role}")
 
         self.all_casts = casts
-        logging.debug(f"Last Unique Cast after {final_it} iterations.")
+        logging.info(f"Last Unique Cast after {final_it} iterations.")
 
         return pd.DataFrame([c.model_dump() for c in casts]).drop(
             columns=["cast_id", "Host"]
