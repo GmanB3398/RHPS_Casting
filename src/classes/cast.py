@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, model_validator, ValidationError
+from pydantic import BaseModel, model_validator
 
 
 class Cast(BaseModel):
@@ -18,6 +18,7 @@ class Cast(BaseModel):
     Trixie: str
     Host: str
     Crew: List[str]
+    preference_score: Optional[int]
 
     @model_validator(mode="after")
     def check_crew(self):
@@ -40,7 +41,7 @@ class Cast(BaseModel):
         ]
         for crew in self.Crew:
             if crew in unique_actors:
-                raise ValidationError(f"{crew} is both in cast and on crew!")
+                raise RuntimeError(f"{crew} is both in cast and on crew!")
         return self
 
     @model_validator(mode="after")
@@ -75,7 +76,7 @@ class Cast(BaseModel):
                 self.Eddie,
             ]
             if len(set(unique_characters_no_scott)) != len(unique_characters_no_scott):
-                raise ValidationError("Characters are doubled up! Try a different Cast")
+                raise RuntimeError("Characters are doubled up! Try a different Cast")
         return self
 
 

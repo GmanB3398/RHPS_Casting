@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+import json
 from typing import List, Dict
 import tqdm
 import copy
@@ -11,17 +12,20 @@ from src.classes.cast import Cast, cast_equal
 class CastGenerator:
 
     def __init__(self, available_members: List[str] = []):
-        self.roles = pd.read_csv("data/roles.csv")
+        self.roles = pd.read_csv("tests/fixtures/roles.csv")
+        self.preferences = pd.read_csv(
+            "tests/fixtures/preferences.csv"
+        )  # Will eventually be related to show date
         self.available_members = available_members
         self.roles = self.roles[self.roles.member.isin(self.available_members)]
-        # roles_replaced = self.roles.replace(
-        #     1, pd.Series(self.roles.columns, self.roles.columns)
-        # )
-        # training = roles_replaced.set_index('member').T.to_dict(orient='list')
         roles_long = pd.melt(self.roles, id_vars="member", var_name="role")
         roles_long = roles_long.loc[roles_long.value == 1]
-        # roles_long = roles_long[roles_long.member in available_members]
-        self.roles_long = roles_long.loc[roles_long.value == 1]
+        self.roles_long = roles_long
+
+        self.preferences = self.preferences[
+            self.preferences.member.isin(self.available_members)
+        ]
+        self.preferences = self.preferences.set_index("member")
         self.base_cast = {
             "Riff": "",
             "Brad": "",
@@ -95,7 +99,7 @@ class CastGenerator:
                 return True
         return False
 
-    def get_all_casts(self, it: int = 10000):
+    def get_all_casts(self, it: int = 5000):
         """ """
 
         # Choose In order of Least Represented Role
@@ -135,15 +139,18 @@ class CastGenerator:
                     if member not in cast.values()
                 ]
                 cast = self.assign_extra_role(cast, "Host")
+                cast = self.get_preference_for_cast(cast)
                 cast = Cast(**cast)
                 if not self.cast_in_casts(cast, casts):
                     casts.append(cast)
                     final_it = i
 
             except ValidationError as val:
-                logging.debug(
+                logging.error(
                     f"Invalid Cast Passed to Validator. Validation Error: {val}"
                 )
+                with open("data/error_cast.json", "w+") as err:
+                    json.dump(err, indent=4)
             except LookupError:
                 logging.debug(f"Could not find an Actor to play {role}")
 
@@ -153,3 +160,26 @@ class CastGenerator:
         return pd.DataFrame([c.model_dump() for c in casts]).drop(
             columns=["cast_id", "Host"]
         )
+
+    def get_preference_for_cast(self, cast: Dict[str, str]) -> Dict[str, str]:
+
+        # match preference_df to Cast
+        score = 0
+        for role, actor in cast.items():
+            if role == "cast_id":
+                continue
+            if actor == "":  # Crimless case
+                continue  # TODO: Ask laurel if we should penalize a crimless cast
+            try:
+                if type(actor) is list:
+                    for crew in actor:
+                        score += int(self.preferences.loc[actor, role].iloc[0])
+                else:
+                    score += int(self.preferences.loc[actor, role])
+            except KeyError:
+                logging.debug("Score Not Found")
+
+        # sum up preferences
+        # return Cast with sum object
+        cast["preference_score"] = score
+        return cast
