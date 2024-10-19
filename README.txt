@@ -5,7 +5,7 @@ Takes in information about cast roles and outputs all available casts.
 ## Usage
 
 ```
-python main.py  -l 'Noa' "Laurel" "Griffin" "Annie" "Sarah" "Mandy" "AJ" "Em" "Garment" "Gabe"
+python main.py  -l <list_of_names>
 ```
 
 Writes to `outfile.csv` in the directory where this is run.
