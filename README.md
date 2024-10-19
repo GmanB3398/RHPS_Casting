@@ -9,6 +9,7 @@ Takes in information about cast roles and outputs all available casts.
 2. Set up your environment by running:
 
     ```{bash}
+    pip install pipenv
     pipenv install
     pipenv shell
     ```
