@@ -4,8 +4,35 @@ Takes in information about cast roles and outputs all available casts.
 
 ## Usage
 
+1. Create CSV files for roles and preferences using the examples in `tests/fixtures` and place them in the `data/` folder.
+
+2. Set up your environment by running 
 ```
-python main.py  -l 'Noa' "Laurel" "Griffin" "Annie" "Sarah" "Mandy" "AJ" "Em" "Garment" "Gabe"
+pipenv install
+pipenv shell
+```
+
+3. Run the following python in the terminal or use the VSCode launch.json file below
+
+The list of names determines who is available for casting in the show.
+
+```
+python main.py -l Alex Dakota Avery Skyler Jamie Shawn Parker Reese Taylor Cameron Logan 
+```
+
+```
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Module",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "main",
+            "args": ["-l", "Alex", "Dakota", "Avery", "Skyler", "Jamie", "Shawn", "Parker", "Reese", "Taylor", "Cameron", "Logan"]
+        }
+    ]
+}
 ```
 
 Writes to `outfile.csv` in the directory where this is run.
