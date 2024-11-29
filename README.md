@@ -50,7 +50,7 @@ After running, this will write to `outfile.csv` with a dataset of all possible c
 
 - Use cloud storage for data files (preferably gdocs)
 
-### v0.3.0 __IN_PROGRESS__
+### v0.3.0
 
 - Order Casts by Preference
 - (stretch) Order Casts by historical performance

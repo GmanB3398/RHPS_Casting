@@ -12,9 +12,9 @@ from src.classes.cast import Cast, cast_equal
 class CastGenerator:
 
     def __init__(self, available_members: List[str] = []):
-        self.roles = pd.read_csv("data/roles.csv")
+        self.roles = pd.read_csv("data/roles_example.csv")
         self.preferences = pd.read_csv(
-            "data/preferences.csv"
+            "data/pref_example.csv"
         )  # Will eventually be related to show date
         self.available_members = available_members
         self.roles = self.roles[self.roles.member.isin(self.available_members)]
@@ -138,6 +138,7 @@ class CastGenerator:
                     for member in self.available_members
                     if member not in cast.values()
                 ]
+                cast["Crew"] = ", ".join(cast["Crew"])
                 cast = self.assign_extra_role(cast, "Host")
                 cast = self.get_preference_for_cast(cast)
                 cast = Cast(**cast)
@@ -150,7 +151,7 @@ class CastGenerator:
                     f"Invalid Cast Passed to Validator. Validation Error: {val}"
                 )
                 with open("data/error_cast.json", "w+") as err:
-                    json.dump(err, indent=4)
+                    json.dump(cast, fp=err, indent=4)
             except LookupError:
                 logging.debug(f"Could not find an Actor to play {role}")
 
@@ -159,7 +160,7 @@ class CastGenerator:
 
         return pd.DataFrame([c.model_dump() for c in casts]).drop(
             columns=["cast_id", "Host"]
-        )
+        ).sort_values('preference_score', ascending=False)
 
     def get_preference_for_cast(self, cast: Dict[str, str]) -> Dict[str, str]:
 

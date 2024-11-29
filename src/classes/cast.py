@@ -17,7 +17,7 @@ class Cast(BaseModel):
     Crim: Optional[str]
     Trixie: str
     Host: str
-    Crew: List[str]
+    Crew: str
     preference_score: Optional[int]
 
     @model_validator(mode="after")
