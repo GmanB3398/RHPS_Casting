@@ -46,14 +46,17 @@ After running, this will write to `outfile.csv` with a dataset of all possible c
 - Get All Valid Casts locally
 - Output this cast to a file
 
-### v0.2.0
+### v0.2.0 __DONE__
 
 - Use cloud storage for data files (preferably gdocs)
 
-### v0.3.0
+### v0.3.0 __DONE__
 
 - Order Casts by Preference
-- (stretch) Order Casts by historical performance
+
+### v0.4.0
+
+- Order Casts by historical performance
 
 ### v1.0.0
 
