@@ -158,9 +158,11 @@ class CastGenerator:
         self.all_casts = casts
         logging.info(f"Last Unique Cast after {final_it} iterations.")
 
-        return pd.DataFrame([c.model_dump() for c in casts]).drop(
-            columns=["cast_id", "Host"]
-        ).sort_values('preference_score', ascending=False)
+        return (
+            pd.DataFrame([c.model_dump() for c in casts])
+            .drop(columns=["cast_id", "Host"])
+            .sort_values("preference_score", ascending=False)
+        )
 
     def get_preference_for_cast(self, cast: Dict[str, str]) -> Dict[str, str]:
 

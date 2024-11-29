@@ -12,14 +12,17 @@ from googleapiclient.discovery import build
 
 
 class GoogleConnector:
-    def __init__(self, credentials_path = 'credentials.json'):
+    def __init__(self, credentials_path="credentials.json"):
         """
         Initializes the GoogleDriveService with the service account credentials.
 
         :param credentials_path: Path to the service account JSON credentials file.
         """
         self.credentials_path = credentials_path
-        self.scopes = ["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/spreadsheets"]
+        self.scopes = [
+            "https://www.googleapis.com/auth/drive",
+            "https://www.googleapis.com/auth/spreadsheets",
+        ]
         self.authenticate()
 
     def authenticate(self, cache=True):
@@ -35,14 +38,14 @@ class GoogleConnector:
                 if creds and creds.expired and creds.refresh_token:
                     creds.refresh(Request())
                 flow = InstalledAppFlow.from_client_secrets_file(
-                        self.credentials_path, self.scopes
-                    )
+                    self.credentials_path, self.scopes
+                )
                 creds = flow.run_local_server(port=0)
                 # Save the credentials for the next run
                 if cache:
                     with open("token.json", "w") as token:
                         token.write(creds.to_json())
-            
+
             self.drive_service = build("drive", "v3", credentials=creds)
             self.sheets_service = build("sheets", "v4", credentials=creds)
 
@@ -65,7 +68,11 @@ class GoogleConnector:
 
         try:
             # Get spreadsheet metadata to retrieve sheet names and IDs
-            sheet_metadata = self.sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+            sheet_metadata = (
+                self.sheets_service.spreadsheets()
+                .get(spreadsheetId=spreadsheet_id)
+                .execute()
+            )
             sheets = sheet_metadata.get("sheets", [])
 
             if not os.path.exists(output_directory):
@@ -73,13 +80,15 @@ class GoogleConnector:
 
             for sheet in sheets:
                 sheet_title = sheet["properties"]["title"]
-                sheet_id = sheet["properties"]["sheetId"]
+                # sheet_id = sheet["properties"]["sheetId"]
 
                 # Read data from the sheet
-                result = self.sheets_service.spreadsheets().values().get(
-                    spreadsheetId=spreadsheet_id,
-                    range=sheet_title
-                ).execute()
+                result = (
+                    self.sheets_service.spreadsheets()
+                    .values()
+                    .get(spreadsheetId=spreadsheet_id, range=sheet_title)
+                    .execute()
+                )
 
                 rows = result.get("values", [])
                 output_file = os.path.join(output_directory, f"{sheet_title}.csv")
@@ -91,11 +100,12 @@ class GoogleConnector:
 
                 logging.info(f"Exported sheet '{sheet_title}' to {output_file}")
 
-
         except Exception as e:
             logging.error(f"Failed to export sheets: {e}")
 
-    def upload_casts_from_df(self, df: pd.DataFrame, spreadsheet_id, sheet_name = 'outfile'):
+    def upload_casts_from_df(
+        self, df: pd.DataFrame, spreadsheet_id, sheet_name="outfile"
+    ):
         """
         Uploads
 
@@ -111,7 +121,11 @@ class GoogleConnector:
 
         try:
             # Step 1: Check if the sheet already exists and delete
-            sheet_metadata = self.sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+            sheet_metadata = (
+                self.sheets_service.spreadsheets()
+                .get(spreadsheetId=spreadsheet_id)
+                .execute()
+            )
             sheets = sheet_metadata.get("sheets", [])
             existing_sheet_id = None
 
@@ -121,53 +135,44 @@ class GoogleConnector:
                     break
             if existing_sheet_id:
                 batch_update_request_body = {
-                    "requests": [
-                        {
-                            "deleteSheet": {
-                                "sheetId": existing_sheet_id
-                            }
-                        }
-                    ]
+                    "requests": [{"deleteSheet": {"sheetId": existing_sheet_id}}]
                 }
                 self.sheets_service.spreadsheets().batchUpdate(
-                    spreadsheetId=spreadsheet_id,
-                    body=batch_update_request_body
+                    spreadsheetId=spreadsheet_id, body=batch_update_request_body
                 ).execute()
                 logging.debug(f"Deleted existing sheet '{sheet_name}'.")
-            
+
             # Step 2: Create a new sheet in the spreadsheet
             batch_update_request_body = {
-                "requests": [
-                    {
-                        "addSheet": {
-                            "properties": {
-                                "title": sheet_name
-                            }
-                        }
-                    }
-                ]
+                "requests": [{"addSheet": {"properties": {"title": sheet_name}}}]
             }
-            response = self.sheets_service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id,
-                body=batch_update_request_body
-            ).execute()
-            logging.debug(f"Sheet '{sheet_name}' created successfully.")
+            response = (
+                self.sheets_service.spreadsheets()
+                .batchUpdate(
+                    spreadsheetId=spreadsheet_id, body=batch_update_request_body
+                )
+                .execute()
+            )
+            logging.debug(f"Sheet '{sheet_name}' created successfully: {response}")
 
             # Step 3: Read the dataframe file and prepare data
             values = [df.columns.tolist()] + df.values.tolist()
 
-
             # Step 4: Write data to the new sheet
             data_range = f"{sheet_name}!A1"  # Start writing from the first cell
-            body = {
-                "values": values
-            }
-            self.sheets_service.spreadsheets().values().update(
-                spreadsheetId=spreadsheet_id,
-                range=data_range,
-                valueInputOption="RAW",  # Use "RAW" for plain data or "USER_ENTERED" for interpreted data
-                body=body
-            ).execute()
+            body = {"values": values}
+            response = (
+                self.sheets_service.spreadsheets()
+                .values()
+                .update(
+                    spreadsheetId=spreadsheet_id,
+                    range=data_range,
+                    valueInputOption="RAW",
+                    body=body,
+                )
+                .execute()
+            )
             logging.debug(f"Dataframe uploaded to sheet '{sheet_name}' successfully.")
+            return response
         except Exception as e:
             logging.error(f"Failed to upload CSV: {e}")

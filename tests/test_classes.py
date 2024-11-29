@@ -24,7 +24,7 @@ class TestCastObject(TestCase):
             "Trixie": "Trixie",
             "Rocky": "Rocky",
             "Host": "Host",
-            "Crew": ["T1", "T2", "T3"],
+            "Crew": "T1, T2, T3",
             "preference_score": 0,
         }
         test_cast = Cast(**data)
@@ -46,7 +46,7 @@ class TestCastObject(TestCase):
             "Trixie": "Trixie",  # Allowed to overlap
             "Rocky": "Trixie",
             "Host": "Trixie",
-            "Crew": ["T1", "T2", "T3"],
+            "Crew": "T1, T2, T3",
             "preference_score": 0,
         }
         test_cast = Cast(**data)
@@ -68,7 +68,7 @@ class TestCastObject(TestCase):
             "Trixie": "Trixie",  # Allowed to overlap
             "Rocky": "Trixie",
             "Host": "Trixie",
-            "Crew": ["T1", "T2", "T3"],
+            "Crew": "T1, T2, T3",
             "preference_score": 0,
         }
         test_cast = Cast(**data)
@@ -90,7 +90,7 @@ class TestCastObject(TestCase):
             "Trixie": "Trixie",  # Allowed to overlap
             "Rocky": "Trixie",
             "Host": "Trixie",
-            "Crew": ["Columbia", "T2", "T3"],
+            "Crew": "Columbia, T2, T3",
             "preference_score": 0,
         }
         with pytest.raises(RuntimeError):
@@ -112,7 +112,7 @@ class TestCastObject(TestCase):
             "Trixie": "Trixie",
             "Rocky": "Trixie",
             "Host": "Trixie",
-            "Crew": ["T1", "T2", "T3"],
+            "Crew": "T1, T2, T3",
             "preference_score": 0,
         }
         with pytest.raises(RuntimeError):
@@ -134,7 +134,7 @@ class TestCastObject(TestCase):
             "Trixie": "Trixie",
             "Rocky": "Rocky",
             "Host": "Trixie",
-            "Crew": [],
+            "Crew": "",
             "preference_score": 0,
         }
         with pytest.raises(ValidationError):

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, model_validator
 
@@ -39,7 +39,7 @@ class Cast(BaseModel):
             self.Eddie,
             self.Scott,
         ]
-        for crew in self.Crew:
+        for crew in self.Crew.split(", "):
             if crew in unique_actors:
                 raise RuntimeError(f"{crew} is both in cast and on crew!")
         return self
