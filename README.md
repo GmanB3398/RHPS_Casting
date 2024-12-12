@@ -61,3 +61,11 @@ After running, this will write to `outfile.csv` with a dataset of all possible c
 ### v1.0.0
 
 - Use APIs to have user-friendly product (filtering and such)
+
+### v1.1.0
+
+- Add distinctions for having costumes (Someone wants to play a character, but doesn't have the costumes)
+
+### Eventual
+
+- Hoverable overs for preference score and historical performance (eg: Skylar has played Riff on 12/23, +1 because Parker wants to play Rocky)
