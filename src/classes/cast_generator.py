@@ -71,16 +71,14 @@ class CastGenerator:
             raise LookupError
 
     def assign_standard_role(self, cast: Dict[str, str], role: str) -> Dict:
-        actors = self.eligible_members(role)
+        actors = self.eligible_members(role).copy()
+        np.random.shuffle(actors)
         valid = False
         it = 0
-        while (not valid) and it < 100:
-            actor = str(np.random.choice(actors))
+        for actor in actors:
             if actor not in cast.values():
                 cast[role] = actor
                 valid = True
-            else:
-                it += 1
         if valid:
             return cast
         else:
@@ -138,7 +136,6 @@ class CastGenerator:
                     for member in self.available_members
                     if member not in cast.values()
                 ]
-                cast = self.assign_extra_role(cast, "Host")
                 cast = self.get_preference_for_cast(cast)
                 cast = Cast(**cast)
                 if not self.cast_in_casts(cast, casts):

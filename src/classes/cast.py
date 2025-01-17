@@ -16,7 +16,6 @@ class Cast(BaseModel):
     Eddie: str
     Crim: Optional[str]
     Trixie: str
-    Host: str
     Crew: List[str]
     preference_score: Optional[int]
 
