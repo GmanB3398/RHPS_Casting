@@ -9,15 +9,14 @@ Takes in information about cast roles and outputs all available casts.
 2. Set up your environment by running:
 
     ```{bash}
-    pip install pipenv
-    pipenv install
-    pipenv shell
+    pip install poetry
+    poetry install
     ```
 
 3. Run the following python in the terminal or use the VSCode launch.json file below:
 
     ```{bash}
-    python main.py -l Alex Dakota Avery Skyler Jamie Shawn Parker Reese Taylor Cameron Logan 
+    poetry run python main.py -l Alex Dakota Avery Skyler Jamie Shawn Parker Reese Taylor Cameron Logan 
     ```
 
     ```{json}

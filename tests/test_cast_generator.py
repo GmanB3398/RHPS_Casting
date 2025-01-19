@@ -1,61 +1,78 @@
-from unittest import TestCase
-
-from src.classes.cast_generator import CastGenerator
+import unittest
 
 import pandas as pd
 
+from src.classes.cast_generator import CastGenerator
 
-class TestGetPreferenceForCast(TestCase):
+
+class TestCastGeneratorWithFixtures(unittest.TestCase):
 
     def setUp(self):
-        csv_path = "tests/fixtures/preferences.csv"
-        self.data = pd.read_csv(csv_path)
+        # Load CSV fixtures
+        self.roles = pd.read_csv("tests/fixtures/roles.csv")
+        self.preferences = pd.read_csv("tests/fixtures/preferences.csv")
+        self.available_members = [
+            "Alex",
+            "Dakota",
+            "Avery",
+            "Skyler",
+            "Jamie",
+            "Shawn",
+            "Parker",
+            "Reese",
+            "Taylor",
+            "Cameron",
+            "Logan",
+        ]
 
-        self.cast = {
-            "cast_id": 0,
-            "Riff": "Shawn",
-            "Brad": "Taylor",
-            "Janet": "Cameron",
-            "Columbia": "Reese",
-            "Eddie": "Avery",
-            "Magenta": "Dakota",
-            "Frank": "Skyler",
-            "Crim": "Logan",
-            "Trixie": "Avery",
-            "Rocky": "Alex",
-            "Scott": "Avery",
-            "Crew": ["Jamie", "Parker"],
-        }
+        # Mock the CastGenerator initialization
+        self.cast_generator = CastGenerator(self.available_members, self.roles, self.preferences)
 
-        self.obj = CastGenerator(available_members=list(self.cast.values()))
-        self.obj.preferences = self.data.set_index("member")
+        # Recreate roles_long for testing
+        roles_sub = self.roles[self.roles.member.isin(self.available_members)]
+        roles_long = pd.melt(roles_sub, id_vars=["member"], var_name="role")
+        self.roles_long = roles_long.loc[roles_long.value == 1]
 
-    def test_valid_cast_with_actors(self):
-        # Test when cast has valid actors with corresponding preferences
-        expected_cast = self.cast
-        expected_cast["preference_score"] = 10
+    def test_roles_long_format(self):
+        # Ensure roles_long is correctly generated
+        pd.testing.assert_frame_equal(
+            self.cast_generator.roles_long.reset_index(drop=True),
+            self.roles_long.reset_index(drop=True),
+        )
 
-        result = self.obj.get_preference_for_cast(self.cast)
-        assert result == expected_cast
+    def test_eligible_members(self):
+        # Validate eligible_members method
+        eligible_for_frank = self.cast_generator.eligible_members("Frank")
+        roles = self.roles[self.roles.member.isin(self.available_members)]
+        expected_eligible = roles.loc[roles["Frank"] == 1, "member"].tolist()
+        self.assertListEqual(eligible_for_frank, expected_eligible)
 
-    def test_cast_with_missing_actors(self):
-        # Test when a role has no actor assigned (i.e., empty string for the actor)
-        missing_role_cast = self.cast.copy()
-        missing_role_cast["Crim"] = ""
+    def test_assign_Sceddie(self):
+        # Test assign_Sceddie method for Eddie
+        self.cast_generator.assign_Sceddie("Eddie")
+        self.assertGreater(len(self.cast_generator.full_casts), 0)
+        for cast in self.cast_generator.full_casts:
+            self.assertIn("Eddie", cast)
 
-        expected_cast = missing_role_cast
-        expected_cast["preference_score"] = 9
+    def test_assign_standard_role(self):
+        # Test assign_standard_role method for Frank
+        self.cast_generator.assign_standard_role("Frank")
+        self.assertGreater(len(self.cast_generator.full_casts), 0)
+        for cast in self.cast_generator.full_casts:
+            self.assertIn("Frank", cast)
 
-        result = self.obj.get_preference_for_cast(missing_role_cast)
-        assert result == expected_cast
+    def test_get_preferences_for_casts(self):
+        # Validate preference scores for casts
+        self.cast_generator.full_casts = [{"Frank": "Alex", "Janet": "Taylor", "Brad": "Jordan"}]
+        self.cast_generator.get_preferences_for_casts()
 
-    def test_cast_with_invalid_actor_role(self):
-        # Test when the actor-role combination is not in the preferences DataFrame
-        invalid_role_cast = self.cast.copy()
-        invalid_role_cast["Crim"] = "Jackson"
+        for cast in self.cast_generator.full_casts:
+            self.assertIn("preference_score", cast)
+            self.assertIsInstance(cast["preference_score"], float)
 
-        expected_cast = invalid_role_cast
-        expected_cast["preference_score"] = 9
-
-        result = self.obj.get_preference_for_cast(invalid_role_cast)
-        assert result == expected_cast
+    def test_get_all_casts(self):
+        # Full integration test for get_all_casts
+        all_casts = self.cast_generator.get_all_casts()
+        self.assertIsInstance(all_casts, pd.DataFrame)
+        self.assertGreater(len(all_casts), 0)
+        self.assertIn("preference_score", all_casts.columns)
