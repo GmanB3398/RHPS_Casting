@@ -1,155 +1,171 @@
-import pandas as pd
 import logging
-from typing import List, Dict
-import tqdm
-import copy
-from pydantic import ValidationError
-import numpy as np
-from src.classes.cast import Cast, cast_equal
+from typing import Dict, List
+
+import pandas as pd
+
 
 
 class CastGenerator:
 
-    def __init__(self, available_members: List[str] = []):
-        self.roles = pd.read_csv("data/roles.csv")
+    def __init__(
+        self, available_members: List[str], roles: pd.DataFrame, preferences: pd.DataFrame
+    ):
         self.available_members = available_members
-        self.roles = self.roles[self.roles.member.isin(self.available_members)]
-        # roles_replaced = self.roles.replace(
-        #     1, pd.Series(self.roles.columns, self.roles.columns)
-        # )
-        # training = roles_replaced.set_index('member').T.to_dict(orient='list')
-        roles_long = pd.melt(self.roles, id_vars="member", var_name="role")
+        self.roles = roles[roles.member.isin(self.available_members)]
+        roles_long = pd.melt(self.roles, id_vars=["member"], var_name="role")
         roles_long = roles_long.loc[roles_long.value == 1]
-        # roles_long = roles_long[roles_long.member in available_members]
-        self.roles_long = roles_long.loc[roles_long.value == 1]
-        self.base_cast = {
-            "Riff": "",
-            "Brad": "",
-            "Janet": "",
-            "Columbia": "",
-            "Scott": "",
-            "Eddie": "",
-            "Magenta": "",
-            "Frank": "",
-            "Crim": "",
-            "Trixie": "",
-            "Rocky": "",
-        }
-        self.roles_list = list(self.base_cast.keys())
+        self.roles_long = roles_long
+        self.error = False
 
-    def eligible_members(self, role: str) -> List:
-        return (
-            self.roles["member"][self.roles[role] == 1]
-            .rename(index=role, inplace=False)
-            .to_list()
-        )
+        self.preferences = preferences[preferences.member.isin(self.available_members)]
+        self.preferences = self.preferences.set_index("member")
+        self.roles_list = [
+            "Frank",
+            "Janet",
+            "Brad",
+            "Riff",
+            "Magenta",
+            "Columbia",
+            "Scott",
+            "Rocky",
+            "Eddie",
+            "Crim",
+            "Trixie",
+        ]
+        self.full_casts: List[Dict] = []
 
-    def assign_Sceddie(self, cast: Dict[str, str], role: str) -> Dict:
-        anti_role = "Scott" if role == "Eddie" else "Eddie"
-        actors = self.eligible_members(role)
-        valid = False
-        it = 0
-        anti_actor = cast.pop(anti_role)
-        while (not valid) and it < 100:
-            actor = str(np.random.choice(actors))
-            if actor not in cast.values():
-                cast[role] = actor
-                cast[anti_role] = anti_actor
-                valid = True
-            else:
-                it += 1
-        if valid:
-            return cast
-        elif anti_actor != "":
-            cast[role] = anti_actor
-            cast[anti_role] = anti_actor
-        else:
-            raise LookupError
-
-    def assign_standard_role(self, cast: Dict[str, str], role: str) -> Dict:
-        actors = self.eligible_members(role)
-        valid = False
-        it = 0
-        while (not valid) and it < 100:
-            actor = str(np.random.choice(actors))
-            if actor not in cast.values():
-                cast[role] = actor
-                valid = True
-            else:
-                it += 1
-        if valid:
-            return cast
-        else:
-            raise LookupError
-
-    def assign_extra_role(self, cast: Dict[str, str], role: str) -> Dict:
-        actors = self.eligible_members(role)
-        actor = str(np.random.choice(actors))
-        cast[role] = actor
-        return cast
-
-    def cast_in_casts(self, cast: Cast, casts: List[Cast]):
-        for old_cast in casts:
-            equal = cast_equal(cast, old_cast)
-            if equal:
-                return True
-        return False
-
-    def get_all_casts(self, it: int = 10000):
+    def get_all_casts(self):
         """ """
-
         # Choose In order of Least Represented Role
         # (likely smallest constraint)
         roles_by_amount = list(
             self.roles_long.groupby("role")
-            .sum("value")
+            .sum()
             .loc[self.roles_list]
             .sort_values("value", ascending=True)
             .index
         )
-        casts: List = []
-        for i in tqdm.trange(it):
-            try:
-                if i > round(it / 2):
-                    np.random.shuffle(roles_by_amount)
-                cast = copy.copy(self.base_cast)
-                cast["cast_id"] = i
-                for role in roles_by_amount:
-                    # Get All Members who Can play that role
-                    if role in ["Crim", "Crew", "Trixie", "Host"]:
-                        continue
-                    if role in ["Eddie", "Dr. Scott"]:
-                        cast = self.assign_Sceddie(cast, role)
-                    else:
-                        cast = self.assign_standard_role(cast, role)
-                # Assign Crim at the End
-                try:
-                    cast = self.assign_standard_role(cast, "Crim")
-                except LookupError:
-                    logging.debug("Creating Crimless Cast")
-                    pass
-                cast = self.assign_extra_role(cast, "Trixie")
-                cast["Crew"] = [
-                    member
-                    for member in self.available_members
-                    if member not in cast.values()
-                ]
-                cast = self.assign_extra_role(cast, "Host")
-                cast = Cast(**cast)
-                if not self.cast_in_casts(cast, casts):
-                    casts.append(cast)
-                    final_it = i
+        for role in roles_by_amount:
+            if role in ["Crim", "Crew", "Trixie", "Host"]:
+                continue
+            elif role in ["Eddie", "Scott"]:
+                self.assign_Sceddie(role)
+            else:
+                self.assign_standard_role(role)
+        # Assign Crim, Trixie at the End
+        self.assign_Crim()
+        self.assign_Trixie()
+        self.assign_Crew()
+        if self.error:
+            return None
 
-            except ValidationError as val:
-                logging.debug(
-                    f"Invalid Cast Passed to Validator. Validation Error: {val}"
-                )
-            except LookupError:
-                logging.debug(f"Could not find an Actor to play {role}")
+        self.get_preferences_for_casts()
+        return pd.DataFrame(self.full_casts).sort_values("preference_score", ascending=False)[
+            self.roles_list + ["Crew", "preference_score"]
+        ]
 
-        self.all_casts = casts
-        logging.debug(f"Last Unique Cast after {final_it} iterations.")
-
-        return pd.DataFrame([c.model_dump() for c in casts]).drop(
-            columns=["cast_id", "Host"]
+    def eligible_members(self, role: str) -> List:
+        return (
+            self.roles["member"][self.roles[role] == 1].rename(index=role, inplace=False).to_list()
         )
+
+    def assign_Sceddie(self, role: str) -> None:
+        casts: List[Dict[str, str]] = []
+        anti_role = "Scott" if role == "Eddie" else "Eddie"
+        actors = self.eligible_members(role)
+        logging.debug(f"Casting {role}, eligble actors: {actors}")
+        for actor in actors:
+            if len(self.full_casts) == 0:
+                casts.append({role: actor})
+            else:
+                for cast_ref in self.full_casts:
+                    cast = cast_ref.copy()
+                    if actor not in cast.values() or actor == cast.get(anti_role):
+                        cast.update({role: actor})
+                        casts.append(cast)
+        if casts == []:
+            logging.error(f"Could Not Find a {role} for this cast")
+            self.error = True
+        else:
+            self.full_casts = casts
+
+    def assign_standard_role(self, role: str) -> None:
+        casts: List[Dict[str, str]] = []
+        actors = self.eligible_members(role).copy()
+        logging.debug(f"Casting {role}, eligble actors: {actors}")
+        for actor in actors:
+            if len(self.full_casts) == 0:
+                casts.append({role: actor})
+            else:
+                for cast_ref in self.full_casts:
+                    cast = cast_ref.copy()
+                    if actor not in cast.values():
+                        cast.update({role: actor})
+                        casts.append(cast)
+        if casts == []:
+            logging.error(f"Could Not Find a {role} for this cast")
+            self.error = True
+        else:
+            self.full_casts = casts
+
+    def assign_Crim(self) -> None:
+        casts: List[Dict[str, str]] = []
+        actors = self.eligible_members("Crim").copy()
+        for cast_ref in self.full_casts:
+            cast = cast_ref.copy()
+            for actor in actors:
+                if actor not in cast.values():
+                    cast.update({"Crim": actor})
+                    casts.append(cast)
+            cast.update({"Crim": ""})
+            casts.append(cast)
+
+        self.full_casts = casts
+
+    def assign_Trixie(self):
+        casts: List[Dict[str, str]] = []
+        actors = self.eligible_members(role="Trixie")
+        for actor in actors:
+            for cast_ref in self.full_casts:
+                cast = cast_ref.copy()
+                if actor not in (cast.get("Brad"), cast.get("Janet")):
+                    cast.update({"Trixie": actor})
+                    casts.append(cast)
+        self.full_casts = casts
+
+    def assign_Crew(self):
+        for cast in self.full_casts:
+            crew: List[str] = [
+                member for member in self.available_members if member not in cast.values()
+            ]
+            cast.update({"Crew": crew})
+
+    def get_preferences_for_casts(self):
+        # match preference_df to Cast
+        for cast in self.full_casts:
+            score = 0.0
+            for role, actor in cast.items():
+                mult: float
+                if role == "Crew":
+                    mult = 0.25
+                elif role in ("Eddie", "Scott"):
+                    mult = 0.5
+                elif role in ("Crim", "Trixie"):
+                    mult = 0.75
+                else:
+                    mult = 1
+
+                if actor == "":  # Crimless case
+                    score -= 1.0
+                try:
+                    if isinstance(actor, list):
+                        for crew in actor:
+                            score += pd.to_numeric(self.preferences.loc[crew, role]) * mult
+                    else:
+                        score += pd.to_numeric(self.preferences.loc[actor, role]) * mult
+                except KeyError:
+                    logging.debug("Score Not Found")
+
+            # sum up preferences
+            # return Cast with sum object
+            cast.update({"preference_score": score})

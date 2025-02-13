@@ -1,15 +1,14 @@
 import argparse
 import logging
 
+import pandas as pd
+
 from src.classes.cast_generator import CastGenerator
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--member_list", "-l", nargs="+", help="List of members to cast.", required=True
-)
-parser.add_argument(
-    "--verbose", "-v", action="store_true", help="Display all Debug Messages."
-)
+
+parser.add_argument("--verbose", "-v", action="store_true", help="Display all Debug Messages.")
+
 
 args = parser.parse_args()
 
@@ -20,6 +19,10 @@ else:
 
 if __name__ == "__main__":
 
-    available_members = list(args.member_list)
-    df = CastGenerator(available_members=available_members).get_all_casts()
+    roles = pd.read_csv("data/roles.csv")
+    preferences = pd.read_csv("data/preferences.csv")
+    available_members = preferences["member"].to_list()
+    df = CastGenerator(
+        available_members=available_members, roles=roles, preferences=preferences
+    ).get_all_casts()
     df.to_csv("outfile.csv", index=False)

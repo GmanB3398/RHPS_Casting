@@ -1,8 +1,10 @@
 .PHONY: lint
 lint: 
-    @pipenv run black .
-    @pipenv run flake8
+	@poetry run black .
+	@poetry run ruff check . --fix
+	@poetry run mypy -p src --check-untyped-defs
 
 .PHONY: test
 test:
-    @pipenv run pytest
+	@poetry run python -m pytest -v --full-trace
+  
