@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--verbose", "-v", action="store_true", help="Display all Debug Messages.")
 
+
 args = parser.parse_args()
 
 if args.verbose:
