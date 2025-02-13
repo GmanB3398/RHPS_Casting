@@ -16,7 +16,7 @@ Takes in information about cast roles and outputs all available casts.
 3. Run the following python in the terminal or use the VSCode launch.json file below:
 
     ```{bash}
-    poetry run python main.py -l Alex Dakota Avery Skyler Jamie Shawn Parker Reese Taylor Cameron Logan 
+    poetry run python main.py 
     ```
 
     ```{json}
@@ -33,11 +33,9 @@ Takes in information about cast roles and outputs all available casts.
     }
     ```
 
-    The list of names determines who is available for casting in the show.
-
 After running, this will write to `outfile.csv` with a sheet of all possible casts as well as a preference score for each cast based on the preferences provided.
 
-The preferences are scaled by 0.75 for Trixie, 0.5 for Eddie and Scott, and 0.25 for crew.
+The preferences are scaled by 0.75 for Trixie, 0.5 for Eddie and Scott, and 0.25 for crew, 1 for all other roles.
 
 ## Deliverable Goals
 
