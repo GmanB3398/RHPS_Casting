@@ -14,6 +14,7 @@ class CastGenerator:
         roles_long = pd.melt(self.roles, id_vars=["member"], var_name="role")
         roles_long = roles_long.loc[roles_long.value == 1]
         self.roles_long = roles_long
+        self.error = False
 
         self.preferences = preferences[preferences.member.isin(self.available_members)]
         self.preferences = self.preferences.set_index("member")
@@ -46,7 +47,7 @@ class CastGenerator:
         for role in roles_by_amount:
             if role in ["Crim", "Crew", "Trixie", "Host"]:
                 continue
-            if role in ["Eddie", "Scott"]:
+            elif role in ["Eddie", "Scott"]:
                 self.assign_Sceddie(role)
             else:
                 self.assign_standard_role(role)
@@ -54,8 +55,13 @@ class CastGenerator:
         self.assign_Crim()
         self.assign_Trixie()
         self.assign_Crew()
+        if self.error:
+            return None
+
         self.get_preferences_for_casts()
-        return pd.DataFrame(self.full_casts).sort_values("preference_score", ascending=False)
+        return pd.DataFrame(self.full_casts).sort_values("preference_score", ascending=False)[
+            self.roles_list + ["Crew", "preference_score"]
+        ]
 
     def eligible_members(self, role: str) -> List:
         return (
@@ -66,6 +72,7 @@ class CastGenerator:
         casts: List[Dict[str, str]] = []
         anti_role = "Scott" if role == "Eddie" else "Eddie"
         actors = self.eligible_members(role)
+        logging.debug(f"Casting {role}, eligble actors: {actors}")
         for actor in actors:
             if len(self.full_casts) == 0:
                 casts.append({role: actor})
@@ -75,11 +82,16 @@ class CastGenerator:
                     if actor not in cast.values() or actor == cast.get(anti_role):
                         cast.update({role: actor})
                         casts.append(cast)
-        self.full_casts = casts
+        if casts == []:
+            logging.error(f"Could Not Find a {role} for this cast")
+            self.error = True
+        else:
+            self.full_casts = casts
 
     def assign_standard_role(self, role: str) -> None:
         casts: List[Dict[str, str]] = []
         actors = self.eligible_members(role).copy()
+        logging.debug(f"Casting {role}, eligble actors: {actors}")
         for actor in actors:
             if len(self.full_casts) == 0:
                 casts.append({role: actor})
@@ -89,7 +101,11 @@ class CastGenerator:
                     if actor not in cast.values():
                         cast.update({role: actor})
                         casts.append(cast)
-        self.full_casts = casts
+        if casts == []:
+            logging.error(f"Could Not Find a {role} for this cast")
+            self.error = True
+        else:
+            self.full_casts = casts
 
     def assign_Crim(self) -> None:
         casts: List[Dict[str, str]] = []
@@ -111,7 +127,7 @@ class CastGenerator:
         for actor in actors:
             for cast_ref in self.full_casts:
                 cast = cast_ref.copy()
-                if actor not in (cast["Brad"], cast["Janet"]):
+                if actor not in (cast.get("Brad"), cast.get("Janet")):
                     cast.update({"Trixie": actor})
                     casts.append(cast)
         self.full_casts = casts

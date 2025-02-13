@@ -4,7 +4,7 @@ Takes in information about cast roles and outputs all available casts.
 
 ## Usage
 
-1. Create CSV files for roles and preferences using the examples in `tests/fixtures` and place them in the `data/` folder.
+1. Create CSV files for roles and preferences using the examples in `tests/fixtures` and place them in the `data/` folder using the names `roles.csv` and `preferences.csv`.
 
 2. Set up your environment by running:
 
@@ -28,7 +28,6 @@ Takes in information about cast roles and outputs all available casts.
                 "type": "debugpy",
                 "request": "launch",
                 "module": "main",
-                "args": ["-l", "Alex", "Dakota", "Avery", "Skyler", "Jamie", "Shawn", "Parker", "Reese", "Taylor", "Cameron", "Logan"]
             }
         ]
     }
@@ -36,7 +35,9 @@ Takes in information about cast roles and outputs all available casts.
 
     The list of names determines who is available for casting in the show.
 
-After running, this will write to `outfile.csv` with a dataset of all possible casts.
+After running, this will write to `outfile.csv` with a sheet of all possible casts as well as a preference score for each cast based on the preferences provided.
+
+The preferences are scaled by 0.75 for Trixie, 0.5 for Eddie and Scott, and 0.25 for crew.
 
 ## Deliverable Goals
 
