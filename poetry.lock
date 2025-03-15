@@ -3109,6 +3109,21 @@ watchdog = {version = ">=2.1.5,<7", markers = "platform_system != \"Darwin\""}
 snowflake = ["snowflake-connector-python (>=3.3.0)", "snowflake-snowpark-python[modin] (>=1.17.0)"]
 
 [[package]]
+name = "streamlit-dynamic-filters"
+version = "0.1.9"
+description = "Dynamic multiselect filters for Streamlit"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "streamlit_dynamic_filters-0.1.9-py3-none-any.whl", hash = "sha256:0b2d6db612f35bf10e18f19de137c65b051d38ed000a6e3bfe973370b142b42d"},
+    {file = "streamlit_dynamic_filters-0.1.9.tar.gz", hash = "sha256:ef65029ec249a3681390711b88fcad339bb3a4ce1e13857443d4553592e23cba"},
+]
+
+[package.dependencies]
+streamlit = "*"
+
+[[package]]
 name = "tenacity"
 version = "9.0.0"
 description = "Retry code until it succeeds"
@@ -3448,4 +3463,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "a38777a8ba8dc784881ae7a8f5e8b805961d9324dd73161da984a7ceb8d9bbf5"
+content-hash = "fe5428a6cbbf86a3e8e83717355b77dfc94131fe1cb2a8d5d013c818374b6a1d"
