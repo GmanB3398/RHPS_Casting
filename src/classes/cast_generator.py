@@ -3,12 +3,53 @@ from typing import Dict, List
 
 import pandas as pd
 
+roles_list = [
+    "Frank",
+    "Janet",
+    "Brad",
+    "Riff",
+    "Magenta",
+    "Columbia",
+    "Scott",
+    "Rocky",
+    "Eddie",
+    "Crim",
+    "Trixie",
+]
+
+role_mapping: Dict = {
+    "Riff Raff": "Riff",
+    "Dr. Scott": "Scott",
+    "Dr Scott": "Scott",
+    "Criminologist": "Crim",
+    "Mags": "Magenta",
+    "Crew": "Crew",
+}
+
+default_score_config = {
+    "Frank": 1,
+    "Janet": 1,
+    "Brad": 1,
+    "Riff": 1,
+    "Magenta": 1,
+    "Columbia": 1,
+    "Scott": 0.5,
+    "Rocky": 1,
+    "Eddie": 0.5,
+    "Crim": 0.75,
+    "Trixie": 0.75,
+    "Crew": 0.25,
+}
 
 
 class CastGenerator:
 
     def __init__(
-        self, available_members: List[str], roles: pd.DataFrame, preferences: pd.DataFrame
+        self,
+        available_members: List[str],
+        roles: pd.DataFrame,
+        preferences: pd.DataFrame,
+        score_config: Dict = {},
     ):
         self.available_members = available_members
         self.roles = roles[roles.member.isin(self.available_members)]
@@ -19,20 +60,12 @@ class CastGenerator:
 
         self.preferences = preferences[preferences.member.isin(self.available_members)]
         self.preferences = self.preferences.set_index("member")
-        self.roles_list = [
-            "Frank",
-            "Janet",
-            "Brad",
-            "Riff",
-            "Magenta",
-            "Columbia",
-            "Scott",
-            "Rocky",
-            "Eddie",
-            "Crim",
-            "Trixie",
-        ]
+        self.roles_list = roles_list
+        self.role_mapping = role_mapping
         self.full_casts: List[Dict] = []
+
+        self.score_config = default_score_config
+        self.score_config.update(score_config)
 
     def get_all_casts(self):
         """ """
@@ -57,7 +90,7 @@ class CastGenerator:
         self.assign_Trixie()
         self.assign_Crew()
         if self.error:
-            return None
+            return pd.DataFrame()
 
         self.get_preferences_for_casts()
         return pd.DataFrame(self.full_casts).sort_values("preference_score", ascending=False)[
@@ -169,3 +202,32 @@ class CastGenerator:
             # sum up preferences
             # return Cast with sum object
             cast.update({"preference_score": score})
+
+
+def clean_inputs(input_df: pd.DataFrame) -> pd.DataFrame | str:
+
+    for col in input_df.columns:
+        cleaned_col = col.strip()
+        if cleaned_col not in roles_list:
+            cleaned_col = role_mapping.get(cleaned_col, cleaned_col)
+        input_df = input_df.rename(columns={col: cleaned_col})
+
+        if pd.api.types.is_string_dtype(input_df[cleaned_col]):
+            input_df["member"] = input_df[cleaned_col].str.strip()
+            if cleaned_col != "member":
+                input_df = input_df.drop(columns=[cleaned_col])
+
+    if "member" not in input_df.columns:
+        error = "Unable to find member column, please add a column titled `member`"
+        return error
+
+    missing_roles = []
+    for role in roles_list:
+        if role not in input_df.columns:
+            missing_roles.append(role)
+
+    if missing_roles != []:
+        error = f"One or more roles missing: {missing_roles}"
+        return error
+
+    return input_df

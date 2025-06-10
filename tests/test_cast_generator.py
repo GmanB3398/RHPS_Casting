@@ -82,4 +82,4 @@ class TestCastGeneratorWithFixtures(unittest.TestCase):
         available_members = ["Alex", "Taylor", "Parker", "Rowan", "Quinn", "Cameron"]
         cast_generator = CastGenerator(available_members, self.roles, self.preferences)
         all_casts = cast_generator.get_all_casts()
-        self.assertIsNone(all_casts)
+        self.assertTrue(all_casts.empty)
