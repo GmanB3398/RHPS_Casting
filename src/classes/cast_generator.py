@@ -208,11 +208,11 @@ def clean_inputs(input_df: pd.DataFrame) -> pd.DataFrame | str:
 
     for col in input_df.columns:
         cleaned_col = col.strip()
-        if cleaned_col not in roles_list:
+        if cleaned_col not in roles_list or cleaned_col == "member":
             cleaned_col = role_mapping.get(cleaned_col, cleaned_col)
         input_df = input_df.rename(columns={col: cleaned_col})
 
-        if pd.api.types.is_string_dtype(input_df[cleaned_col]):
+        if pd.api.types.is_string_dtype(input_df[cleaned_col]) and "member" not in input_df.columns:
             input_df["member"] = input_df[cleaned_col].str.strip()
             if cleaned_col != "member":
                 input_df = input_df.drop(columns=[cleaned_col])
@@ -230,4 +230,4 @@ def clean_inputs(input_df: pd.DataFrame) -> pd.DataFrame | str:
         error = f"One or more roles missing: {missing_roles}"
         return error
 
-    return input_df
+    return input_df[['member'] + roles_list + ['Crew']]
